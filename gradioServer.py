@@ -1,7 +1,7 @@
 import gradio as gr
 from bs4 import BeautifulSoup
 import chardet
-import pandas as pd
+from analyze_deals import analyze_deals
 
 def analyze_html(file_path):
     try:
@@ -29,9 +29,6 @@ def analyze_html(file_path):
         # Extract links
         links = [a["href"] for a in soup.find_all("a", href=True)]
 
-        # Extract text content
-        text_content = soup.get_text(separator="\n", strip=True)
-
         # Extract tables
         tables = soup.find_all('table')
 
@@ -54,7 +51,6 @@ def analyze_html(file_path):
                                 rows.append(col_data)
                             else:
                                 col_data = [columns[i]]
-                                #rows.append(col_data)
                     elif columns and columns[0] == "Results":  # Ensure 'Results' is the first column if present
                         foundStartPoint = True
                 else:
@@ -79,11 +75,11 @@ def analyze_html(file_path):
         for h_level, h_texts in headings.items():
             if h_texts:
                 result += f"**{h_level.upper()} Headings:** {', '.join(h_texts)}\n\n"
-        result += f"**Links:** {', '.join(links) if links else 'No links found'}\n\n"
         if summary and len(summary) > 0:
-            return result, summary[0], orders, deals
+            deal_result, plot_bytes = analyze_deals(deals)
+            return result + deal_result, summary[0], orders, deals, plot_bytes
 
-        return result, [], orders, deals
+        return result, [], orders, deals , ""
 
     except Exception as e:
         return f"Error processing file: {str(e)}"
@@ -99,6 +95,10 @@ def main():
                     html_analyze_btn = gr.Button("Analyze")
                 with gr.Column(scale=2):
                     html_output = gr.Textbox(label="Analysis Results")
+            
+            with gr.Row():
+                with gr.Column(scale=1):
+                    plot_output = gr.Image(label="Win Rate vs Volume Plot")
 
             with gr.Row():
                 with gr.Column(scale=1):
@@ -112,9 +112,16 @@ def main():
                 with gr.Column(scale=1):
                     deals = gr.DataFrame(label="Deals")
             
-            html_analyze_btn.click(analyze_html, inputs=[html_file_input], outputs=[html_output, summary, orders, deals])
+            html_analyze_btn.click(analyze_html, inputs=[html_file_input], outputs=[html_output, summary, orders, deals, plot_output])
 
-    demo.launch()
+        with gr.Tab("HTML File Analyzer"):
+            gr.Markdown("# HTML Analysis & Data Display")
+            gr.Markdown("# HTML Analysis & Data Display")
+            gr.Markdown("# HTML Analysis & Data Display")
+            gr.Markdown("# HTML Analysis & Data Display")
+    server_name = "0.0.0.0"
+    server_port = 7860
+    demo.launch(server_name=server_name, server_port=server_port)
 
 if __name__ == "__main__":
     main()
